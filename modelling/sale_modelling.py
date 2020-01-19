@@ -14,13 +14,40 @@ class SaleForecast():
         self.weights = weights
         self.data_normalization = data_normalization
 
-    def train(self, feature_df, y_df):
+    def train(self, data_df):
         # todo: grid search for hyper-parameters.
-        xgb_model = xgb.XGBRegressor(max_depth=8, n_estimators=1000)
-        xgb_model.fit(feature_df, y_df)
+        train_df = data_df[data_df['date_block_num'] != 33]
+        val_df = data_df[data_df['date_block_num'] == 33]
+        x_train = train_df[
+            ['shop_id', 'item_id', 'item_price', 'item_category_id', 'year', 'sin_mon', 'cos_mon']]
+        y_train = train_df[['item_cnt_mon']]
+        x_val = val_df[
+            ['shop_id', 'item_id', 'item_price', 'item_category_id', 'year', 'sin_mon', 'cos_mon']]
+        y_val = val_df[['item_cnt_mon']]
 
+        xgb_model = xgb.XGBRegressor(
+            max_depth=8,
+            n_estimators=1000,
+            min_child_weight=300,
+            colsample_bytree=0.8,
+            subsample=0.8,
+            eta=0.3,
+            seed=42)
+
+        xgb_model.fit(
+            x_train,
+            y_train,
+            eval_metric="rmse",
+            eval_set=[(x_train, y_train), (x_val, y_val)],
+            verbose=True,
+            early_stopping_rounds=10)
+
+        prediction = xgb_model.predict(x_val)
+        val_rmse = self.calculate_rmse(prediction, y_val)
+        print("The validation rmse is {}".format(val_rmse))
         return xgb_model
 
-
-
-
+    @staticmethod
+    def calculate_rmse(prediction, gt):
+        rmse = np.sqrt(np.mean(np.power(prediction - np.array(gt), 2)))
+        return rmse

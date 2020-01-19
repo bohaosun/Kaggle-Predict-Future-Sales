@@ -14,26 +14,25 @@ from datetime import datetime, timedelta
 def run_train(input_dir, output_dir):
     # data pre-processing
     data_pre = DataPrep()
-    data_pre.configuration(input_dir=input_dir)
-    input_df = data_pre.transform()
+    data_pre.configuration(input_dir=input_dir, output_dir=output_dir)
+    train_df, test_df = data_pre.transform()
 
     # feature engineering
     sale_features = SaleFeature()
-    sale_features.configuration(shop_group_by_month=True, item_group_by_month=True, category_group_by_month=True)
-    feature_df, y_df, feature_df_val, y_df_val = sale_features.transform(input_df)
+    sale_features.configuration(shop_group_by_month=False, item_group_by_month=False, category_group_by_month=False)
+    train_df = sale_features.transform(train_df)
+    test_df = sale_features.transform(test_df)
 
     # modelling, XGBoost currently
     sale_model = SaleForecast()
     sale_model.configuration(data_resampling=False, weights=False, data_normalization=False)
-    model = sale_model.train(feature_df, y_df)
-    forecast_df_val = model.predict(feature_df_val)
+    model = sale_model.train(train_df)
 
-    # model's forecast results' evaluation
-    sale_eval = SaleEvaluation()
-    sale_eval.configuration(output_dir)
-    sale_eval.evaluate(forecast_df_val, y_df_val)
-
-    # todo: there should be a function to generate submission data in csv format.
+    # generate submission data file
+    y_test = model.predict(test_df[['shop_id', 'item_id', 'item_price', 'item_category_id', 'year', 'sin_mon', 'cos_mon']])
+    pd.DataFrame(y_test).to_csv(os.path.join(output_dir, "y_test.csv"))
+    submission_df = pd.concat([test_df['ID'], pd.DataFrame(y_test)], axis=1)
+    submission_df.to_csv(os.path.join(output_dir, "submission.csv"))
 
 
 if __name__ == '__main__':
@@ -41,7 +40,7 @@ if __name__ == '__main__':
     output_dir = args.output_dir
 
     run_time_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y%m%d%H%M")
-    output_dir = os.path.join(os.getcwd(), 'model_{}'.format(run_time_str))
+    output_dir = os.path.join(output_dir, 'model_{}'.format(run_time_str))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     run_train(input_dir, output_dir)
