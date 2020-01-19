@@ -18,9 +18,6 @@ class SaleFeature:
         data_df[data_df['month'] == 0]['month'] = 12
         data_df['year'] = data_df['date_block_num'] // 12
 
-        # todo: add itm_cnt_month
-
-
         # add sin_month, cos_month to data_df
         data_df = self.add_sin_cos_month(data_df, 'month')
 
@@ -43,15 +40,12 @@ class SaleFeature:
 
         # todo: add price tendency, increasing or decreasing
 
-        # use the last month as validation set
-        last_month_index = data_df['date_block_num'].max()
-        train_df = data_df[data_df['date_block_num'] != last_month_index]
-        val_df = data_df[data_df['date_block_num'] == last_month_index]
-        y_df = train_df['itm_cnt_month']
-        y_df_val = val_df['itm_cnt_month']
-        feature_df = train_df.drop['itm_cnt_month']
-        feature_df_val = val_df.drop['itm_cnt_month']
-        return feature_df, y_df, feature_df_val, y_df_val
+        # # use the last month as validation set
+        # last_month_index = data_df['date_block_num'].max()
+        # data_df = data_df[data_df['date_block_num'] != last_month_index]
+        # val_df = data_df[data_df['date_block_num'] == last_month_index]
+
+        return data_df
 
     @staticmethod
     def add_sin_cos_month(data_df, month_feature_name):
@@ -61,9 +55,9 @@ class SaleFeature:
 
     @staticmethod
     def add_monthly_sale_by_feature(data_df, groupby_feature, new_feature_name_ls):
-        group_monthly_df = data_df.groupby([groupby_feature, 'date_block_num']).sum()['item_cnt_day']
+        group_monthly_df = data_df.groupby([groupby_feature, 'date_block_num']).aggregate({'item_cnt_mon': 'mean'})
         for i in range(data_df.shape[1]):
-            category = data_df.iloc[i, 'item_category_id']
+            category = data_df.loc[i, 'item_category_id']
             month = data_df.iloc[i, 'month']
             data_df.iloc[i, new_feature_name_ls[0]] = group_monthly_df[category, month]
             data_df.iloc[i, new_feature_name_ls[1]] = group_monthly_df[category, max(month-1,1)]

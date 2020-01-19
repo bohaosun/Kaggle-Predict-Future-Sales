@@ -7,9 +7,11 @@ class DataPrep:
     def __init__(self):
         self.input_dir = None
         self.remove_unique_feature = None
+        self.output_dir = None
 
-    def configuration(self, input_dir, remove_unique_feature=False):
+    def configuration(self, input_dir, output_dir, remove_unique_feature=False):
         self.input_dir = input_dir
+        self.output_dir = output_dir
         self.remove_unique_feature = remove_unique_feature
 
     def read_data_files(self):
@@ -19,6 +21,15 @@ class DataPrep:
         return test_df, items_df, sales_train_df
 
     def transform(self):
+        output_train_path = os.path.join(args.output_dir, "output_basic_train.csv")
+        output_test_path = os.path.join(args.output_dir, "output_basic_test.csv")
+
+        # check whether there is data generated
+        if os.path.exists(output_train_path) and os.path.exists(output_train_path):
+            sales_train_df = pd.read_csv(output_train_path)
+            test_df = pd.read_csv(output_test_path)
+            return sales_train_df, test_df
+
         test_df, items_df, sales_train_df = self.read_data_files()
 
         # There are three sets of shops are the same, based on their names, like shop_id :[0,57], [1,58], [10,11]
@@ -48,8 +59,6 @@ class DataPrep:
         item_price = item_price.reset_index()
         test_df = test_df.merge(item_price, on=['ID'], how='left')
 
-        output_train_path = os.path.join(args.output_dir, "output_basic_train.csv")
-        output_test_path = os.path.join(args.output_dir, "output_basic_test.csv")
         sales_train_df.to_csv(output_train_path)
         test_df.to_csv(output_test_path)
         return sales_train_df, test_df
