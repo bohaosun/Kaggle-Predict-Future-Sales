@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-from tqdm import tqdm
 from modelling.config import args
 
 
@@ -22,6 +21,14 @@ class DataPrep:
     def transform(self):
         test_df, items_df, sales_train_df = self.read_data_files()
 
+        # There are three sets of shops are the same, based on their names, like shop_id :[0,57], [1,58], [10,11]
+        shop_id = sales_train_df['shop_id']
+        shop_id[shop_id == 0] = 57
+        shop_id[shop_id == 1] = 58
+        shop_id[shop_id == 11] = 10
+        sales_train_df['shop_id'] = shop_id
+
+        # remove invalid value, item_cnt_day<0
         sales_train_df = sales_train_df[sales_train_df['item_cnt_day'] > 0]
         monthly_cnt = sales_train_df.groupby(['shop_id', 'item_id', 'date_block_num']).aggregate(
             {'item_price': 'mean', 'item_cnt_day': 'sum'})
@@ -29,30 +36,17 @@ class DataPrep:
         sales_train_df.rename(columns={'item_cnt_day': 'item_cnt_mon'}, inplace=True)
 
         # merge these three files into one file: sales_train_df
-        sales_train_df = sales_train_df.merge(test_df, on=['shop_id', 'item_id'])
-        sales_train_df = sales_train_df.merge(items_df, on=['item_id'])[
-            ['date_block_num', 'shop_id', 'item_id', 'item_price', 'item_cnt_mon', 'ID', 'item_category_id']]
-        # There are three sets of shops are the same, based on their names, like shop_id :[0,57], [1,58], [10,11]
-        sales_train_df.reset_index(inplace=True, drop=True)
+        sales_train_df = pd.merge(sales_train_df, test_df, left_on=['shop_id', 'item_id'],
+                                  right_on=['shop_id', 'item_id'], how='left')
+        sales_train_df = sales_train_df.merge(items_df, on=['item_id'], how='left')
+        sales_train_df = sales_train_df.drop(['item_name'], axis=1)
 
-        # todo: too slow, use another way to do it.
-        for i in tqdm(range(sales_train_df.shape[0])):
-            shop_id = sales_train_df.loc[i, 'shop_id']
-            if shop_id == 57:
-                sales_train_df.loc[i, "shop_id"] = 0
-            elif shop_id == 58:
-                sales_train_df.loc[i, 'shop_id'] = 1
-            elif shop_id == 11:
-                sales_train_df.loc[i, 'shop_id'] = 10
-            else:
-                continue
-
-        test_df = test_df.merge(items_df, on=['item_id'])[
+        test_df = test_df.merge(items_df, on=['item_id'], how='left')[
             ['shop_id', 'item_id', 'ID', 'item_category_id']]
         test_df['date_block_num'] = 34
         item_price = sales_train_df.groupby(['ID']).mean()['item_price']
         item_price = item_price.reset_index()
-        test_df = test_df.merge(item_price, on=['ID'])
+        test_df = test_df.merge(item_price, on=['ID'], how='left')
 
         output_train_path = os.path.join(args.output_dir, "output_basic_train.csv")
         output_test_path = os.path.join(args.output_dir, "output_basic_test.csv")
