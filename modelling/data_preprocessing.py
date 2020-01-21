@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import numpy as np
 from modelling.config import args
 
 
@@ -18,7 +19,8 @@ class DataPrep:
         test_df = pd.read_csv(os.path.join(self.input_dir, "test.csv"))
         sales_train_df = pd.read_csv(os.path.join(self.input_dir, "sales_train.csv"))
         items_df = pd.read_csv(os.path.join(self.input_dir, "items.csv"))
-        return test_df, items_df, sales_train_df
+        shops_df = pd.read_csv(os.path.join(self.input_dir, "shops.csv"))
+        return test_df, items_df, sales_train_df, shops_df
 
     def transform(self):
         output_train_path = os.path.join(args.output_dir, "output_basic_train.csv")
@@ -28,19 +30,28 @@ class DataPrep:
         if os.path.exists(output_train_path) and os.path.exists(output_train_path):
             sales_train_df = pd.read_csv(output_train_path)
             test_df = pd.read_csv(output_test_path)
+            print("There exist generated train and test dataset!")
+            print("Read sales_train_df from {}".format(output_train_path))
+            print("Read test_df from {}".format(test_df))
             return sales_train_df, test_df
 
-        test_df, items_df, sales_train_df = self.read_data_files()
+        test_df, items_df, sales_train_df, shops_df = self.read_data_files()
 
         # There are three sets of shops are the same, based on their names, like shop_id :[0,57], [1,58], [10,11]
-        shop_id = sales_train_df['shop_id']
-        shop_id[shop_id == 0] = 57
-        shop_id[shop_id == 1] = 58
-        shop_id[shop_id == 11] = 10
-        sales_train_df['shop_id'] = shop_id
+        sales_train_df.loc[sales_train_df['shop_id'] == 0, 'shop_id'] = 57
+        sales_train_df.loc[sales_train_df['shop_id'] == 1, 'shop_id'] = 58
+        sales_train_df.loc[sales_train_df['shop_id'] == 11, 'shop_id'] = 10
+        test_df.loc[test_df['shop_id'] == 0, 'shop_id'] = 57
+        test_df.loc[test_df['shop_id'] == 1, 'shop_id'] = 58
+        test_df.loc[test_df['shop_id'] == 11, 'shop_id'] = 10
 
         # remove invalid value, item_cnt_day<0
         sales_train_df = sales_train_df[sales_train_df['item_cnt_day'] > 0]
+        # remove extreme large value for item_cnt_day
+        sales_max_cnt = np.quantile(sales_train_df['item_cnt_day'], 0.99999)
+        sales_train_df = sales_train_df[sales_train_df['item_cnt_day'] < sales_max_cnt]
+
+        # aggregate data into monthly count
         monthly_cnt = sales_train_df.groupby(['shop_id', 'item_id', 'date_block_num']).aggregate(
             {'item_price': 'mean', 'item_cnt_day': 'sum'})
         sales_train_df = monthly_cnt.reset_index(level=[0, 1, 2])
