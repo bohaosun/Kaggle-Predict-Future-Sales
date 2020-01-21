@@ -19,9 +19,8 @@ def run_train(input_dir, output_dir):
 
     # feature engineering
     sale_features = SaleFeature()
-    sale_features.configuration(shop_group_by_month=False, item_group_by_month=False, category_group_by_month=False)
-    train_df = sale_features.transform(train_df)
-    test_df = sale_features.transform(test_df)
+    sale_features.configuration(shop_group_by_month=True, item_group_by_month=True, category_group_by_month=True)
+    train_df, test_df = sale_features.transform(train_df, test_df)
 
     # modelling, XGBoost currently
     sale_model = SaleForecast()
@@ -29,7 +28,7 @@ def run_train(input_dir, output_dir):
     model = sale_model.train(train_df)
 
     # generate submission data file
-    y_test = model.predict(test_df[['shop_id', 'item_id', 'item_price', 'item_category_id', 'year', 'sin_mon', 'cos_mon']])
+    y_test = model.predict(test_df)
     pd.DataFrame(y_test).to_csv(os.path.join(output_dir, "y_test.csv"))
     submission_df = pd.concat([test_df['ID'], pd.DataFrame(y_test)], axis=1)
     submission_df.to_csv(os.path.join(output_dir, "submission.csv"))
