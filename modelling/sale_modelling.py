@@ -18,11 +18,9 @@ class SaleForecast():
         # todo: grid search for hyper-parameters.
         train_df = data_df[data_df['date_block_num'] != 33]
         val_df = data_df[data_df['date_block_num'] == 33]
-        x_train = train_df[
-            ['shop_id', 'item_id', 'item_price', 'item_category_id', 'year', 'sin_mon', 'cos_mon']]
+        x_train = train_df.drop(['item_cnt_mon'], axis=1)
         y_train = train_df[['item_cnt_mon']]
-        x_val = val_df[
-            ['shop_id', 'item_id', 'item_price', 'item_category_id', 'year', 'sin_mon', 'cos_mon']]
+        x_val = val_df.drop(['item_cnt_mon'], axis=1)
         y_val = val_df[['item_cnt_mon']]
 
         xgb_model = xgb.XGBRegressor(
