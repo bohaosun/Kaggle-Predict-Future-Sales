@@ -34,7 +34,8 @@ def run_train(input_dir, output_dir):
     y_test = model.predict(test_df)
     pd.DataFrame(y_test).to_csv(os.path.join(output_dir, "y_test.csv"))
     submission_df = pd.concat([test_df['ID'], pd.DataFrame(y_test)], axis=1)
-    submission_df.to_csv(os.path.join(output_dir, "submission.csv"))
+    submission_df['ID'] = submission_df['ID'].astype(int)
+    submission_df.to_csv(os.path.join(output_dir, "submission.csv"), index=False)
     print("Finish submission generation!")
 
 
