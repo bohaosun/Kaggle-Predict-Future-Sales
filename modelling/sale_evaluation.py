@@ -17,7 +17,6 @@ class SaleEvaluation():
         logging.info("RMSE for forecast result is {}".format(rmse))
         return rmse
 
-    # todo: there can be more evaluation functions like hit rate, accuracy, false alarm, f1, recall, precision and so on.
 
 
 
