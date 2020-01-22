@@ -50,6 +50,12 @@ class DataPrep:
         # remove extreme large value for item_cnt_day
         sales_max_cnt = np.quantile(sales_train_df['item_cnt_day'], 0.99999)
         sales_train_df = sales_train_df[sales_train_df['item_cnt_day'] < sales_max_cnt]
+        # remove item_price outliers
+        item_price_max = np.quantile(sales_train_df['item_price'], 0.9999)
+        sales_train_df = sales_train_df[sales_train_df['item_price'] < item_price_max]
+        # remove item_price below zero
+        sales_train_df = sales_train_df[sales_train_df['item_price'] > 0]
+
 
         # aggregate data into monthly count
         monthly_cnt = sales_train_df.groupby(['shop_id', 'item_id', 'date_block_num']).aggregate(
