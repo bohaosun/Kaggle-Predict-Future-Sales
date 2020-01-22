@@ -31,7 +31,8 @@ def run_train(input_dir, output_dir):
     print("Finish modelling!")
 
     # generate submission data file
-    y_test = model.predict(test_df)
+    print("Features for test_df", test_df.columns)
+    y_test = model.predict(test_df).clip(0, 20)
     pd.DataFrame(y_test).to_csv(os.path.join(output_dir, "y_test.csv"))
     submission_df = pd.concat([test_df['ID'], pd.DataFrame(y_test)], axis=1)
     submission_df['ID'] = submission_df['ID'].astype(int)

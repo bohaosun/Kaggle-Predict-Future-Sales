@@ -22,6 +22,9 @@ class SaleForecast():
         x_val = val_df.drop(['item_cnt_mon'], axis=1)
         y_val = val_df[['item_cnt_mon']]
         print("Model input features: {}".format(x_train.columns))
+        print("y_val min:{}, 50% quantile:{}, 90% quantile:{}, 99% quantile:{}, max:{}".format(y_val.min(),
+                                                                                       np.quantile(y_val['item_cnt_mon'], 0.5),
+              np.quantile(y_val['item_cnt_mon'], 0.9), np.quantile(y_val['item_cnt_mon'], 0.99), y_val.max()))
 
         # todo: add grid search for hyper parameter
         xgb_model = xgb.XGBRegressor(
@@ -41,7 +44,7 @@ class SaleForecast():
             verbose=True,
             early_stopping_rounds=10)
 
-        prediction = xgb_model.predict(x_val)
+        prediction = xgb_model.predict(x_val).clip(0, 20)
         val_rmse = self.calculate_rmse(prediction, y_val)
         print("The validation rmse is {}".format(val_rmse))
         return xgb_model
