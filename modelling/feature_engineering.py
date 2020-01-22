@@ -44,6 +44,7 @@ class SaleFeature:
                                                                             'item_monthly_shift2'])
 
         # todo: add price tendency, increasing or decreasing
+        
         # todo: add shop name
         # use the last month as test set
         train_df = data_df[data_df['date_block_num'] < 34]
@@ -52,8 +53,8 @@ class SaleFeature:
 
     @staticmethod
     def add_sin_cos_month(data_df, month_feature_name):
-        data_df['sin_mon'] = np.sin(data_df[month_feature_name])
-        data_df['cos_mon'] = np.cos(data_df[month_feature_name])
+        data_df['sin_mon'] = np.sin(data_df[month_feature_name]/12*2*np.pi)
+        data_df['cos_mon'] = np.cos(data_df[month_feature_name]/12*2*np.pi)
         return data_df
 
     @staticmethod
@@ -66,7 +67,7 @@ class SaleFeature:
         data_df['date_block_num_shift1'] = (data_df['date_block_num'] - 1).clip(0)
         data_df['date_block_num_shift2'] = (data_df['date_block_num'] - 2).clip(0)
 
-        for i,item in enumerate(['date_block_num', 'date_block_num_shift1', 'date_block_num_shift2']):
+        for i, item in enumerate(['date_block_num', 'date_block_num_shift1', 'date_block_num_shift2']):
             data_df = pd.merge(data_df, group_monthly_df, left_on=[groupby_feature, item],
                                right_on=[groupby_feature, 'date_block_num'], how='left')
             data_df.rename(columns={'item_cnt_mon_group': new_feature_name_ls[i]}, inplace=True)
