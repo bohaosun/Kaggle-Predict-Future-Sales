@@ -30,18 +30,27 @@ class SaleFeature:
         if self.category_group_by_month:
             data_df = self.add_monthly_sale_by_feature(data_df, 'item_category_id', ['category_monthly_sale',
                                                                                      'category_monthly_sale_shift1',
-                                                                                     'category_monthly_sale_shift2'])
+                                                                                     'category_monthly_sale_shift2',
+                                                                                     'category_monthly_sale_shift3',
+                                                                                     'category_monthly_sale_shift6',
+                                                                                     'category_monthly_sale_shift12'
+                                                                                     ])
 
         # add shop monthly sale
         if self.shop_group_by_month:
             data_df = self.add_monthly_sale_by_feature(data_df, 'shop_id', ['shop_monthly_sale',
                                                                             'shop_monthly_shift1',
-                                                                            'shop_monthly_shift2'])
+                                                                            'shop_monthly_shift2',
+                                                                            'shop_monthly_shift3',
+                                                                            'shop_monthly_shift6',
+                                                                            'shop_monthly_shift12'])
 
         # add item monthly sale
         if self.item_group_by_month:
             data_df = self.add_monthly_sale_by_feature(data_df, 'item_id', ['item_monthly_sale', 'item_monthly_shift1',
-                                                                            'item_monthly_shift2'])
+                                                                            'item_monthly_shift2', 'item_monthly_shift3',
+                                                                            'item_monthly_shift6',
+                                                                            'item_monthly_shift12'])
 
         # todo: add price tendency, increasing or decreasing
         
@@ -49,6 +58,9 @@ class SaleFeature:
         # use the last month as test set
         train_df = data_df[data_df['date_block_num'] < 34]
         test_df = data_df[data_df['date_block_num'] == 34]
+        print("After feature engineering, train_df shape", train_df.shape)
+        print("After feature engineering, test_df shape", test_df.shape)
+
         return train_df, test_df.drop(['item_cnt_mon'], axis=1)
 
     @staticmethod
@@ -66,8 +78,12 @@ class SaleFeature:
 
         data_df['date_block_num_shift1'] = (data_df['date_block_num'] - 1).clip(0)
         data_df['date_block_num_shift2'] = (data_df['date_block_num'] - 2).clip(0)
+        data_df['date_block_num_shift3'] = (data_df['date_block_num'] - 3).clip(0)
+        data_df['date_block_num_shift6'] = (data_df['date_block_num'] - 6).clip(0)
+        data_df['date_block_num_shift12'] = (data_df['date_block_num'] - 12).clip(0)
 
-        for i, item in enumerate(['date_block_num', 'date_block_num_shift1', 'date_block_num_shift2']):
+        for i, item in enumerate(['date_block_num', 'date_block_num_shift1', 'date_block_num_shift2',
+                                  'date_block_num_shift3', 'date_block_num_shift6', 'date_block_num_shift12']):
             data_df = pd.merge(data_df, group_monthly_df, left_on=[groupby_feature, item],
                                right_on=[groupby_feature, 'date_block_num'], how='left')
             data_df.rename(columns={'item_cnt_mon_group': new_feature_name_ls[i]}, inplace=True)
