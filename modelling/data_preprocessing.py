@@ -36,6 +36,8 @@ class DataPrep:
             return sales_train_df, test_df
 
         test_df, items_df, sales_train_df, shops_df = self.read_data_files()
+        print("sales_train_df shape,", sales_train_df.shape)
+        print("test_df shape", test_df.shape)
 
         # There are three sets of shops are the same, based on their names, like shop_id :[0,57], [1,58], [10,11]
         sales_train_df.loc[sales_train_df['shop_id'] == 0, 'shop_id'] = 57
@@ -48,14 +50,13 @@ class DataPrep:
         # remove invalid value, item_cnt_day<0
         sales_train_df = sales_train_df[sales_train_df['item_cnt_day'] > 0]
         # remove extreme large value for item_cnt_day
-        sales_max_cnt = np.quantile(sales_train_df['item_cnt_day'], 0.99999)
+        sales_max_cnt = np.quantile(sales_train_df['item_cnt_day'], 0.999)
         sales_train_df = sales_train_df[sales_train_df['item_cnt_day'] < sales_max_cnt]
         # remove item_price outliers
-        item_price_max = np.quantile(sales_train_df['item_price'], 0.9999)
+        item_price_max = np.quantile(sales_train_df['item_price'], 0.999)
         sales_train_df = sales_train_df[sales_train_df['item_price'] < item_price_max]
         # remove item_price below zero
         sales_train_df = sales_train_df[sales_train_df['item_price'] > 0]
-
 
         # aggregate data into monthly count
         monthly_cnt = sales_train_df.groupby(['shop_id', 'item_id', 'date_block_num']).aggregate(
@@ -77,4 +78,6 @@ class DataPrep:
 
         sales_train_df.to_csv(output_train_path)
         test_df.to_csv(output_test_path)
+        print("After data pre-processing, sales_train_df shape", sales_train_df.shape)
+        print("After data pre-processing, test_df shape", test_df.shape)
         return sales_train_df, test_df
