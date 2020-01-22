@@ -27,12 +27,12 @@ class DataPrep:
         output_test_path = os.path.join(args.output_dir, "output_basic_test.csv")
 
         # check whether there is data generated
-        if os.path.exists(output_train_path) and os.path.exists(output_train_path):
+        if os.path.exists(output_train_path) and os.path.exists(output_test_path):
             sales_train_df = pd.read_csv(output_train_path)
             test_df = pd.read_csv(output_test_path)
             print("There exist generated train and test dataset!")
             print("Read sales_train_df from {}".format(output_train_path))
-            print("Read test_df from {}".format(test_df))
+            print("Read test_df from {}".format(output_test_path))
             return sales_train_df, test_df
 
         test_df, items_df, sales_train_df, shops_df = self.read_data_files()
@@ -63,8 +63,7 @@ class DataPrep:
         sales_train_df = sales_train_df.merge(items_df, on=['item_id'], how='left')
         sales_train_df = sales_train_df.drop(['item_name'], axis=1)
 
-        test_df = test_df.merge(items_df, on=['item_id'], how='left')[
-            ['shop_id', 'item_id', 'ID', 'item_category_id']]
+        test_df = test_df.merge(items_df, on=['item_id'], how='left')[['shop_id', 'item_id', 'ID', 'item_category_id']]
         test_df['date_block_num'] = 34
         item_price = sales_train_df.groupby(['ID']).mean()['item_price']
         item_price = item_price.reset_index()

@@ -15,14 +15,15 @@ class SaleForecast():
         self.data_normalization = data_normalization
 
     def train(self, data_df):
-        # todo: grid search for hyper-parameters.
         train_df = data_df[data_df['date_block_num'] != 33]
         val_df = data_df[data_df['date_block_num'] == 33]
         x_train = train_df.drop(['item_cnt_mon'], axis=1)
         y_train = train_df[['item_cnt_mon']]
         x_val = val_df.drop(['item_cnt_mon'], axis=1)
         y_val = val_df[['item_cnt_mon']]
+        print("Model input features: {}".format(x_train.columns))
 
+        # todo: add grid search for hyper parameter
         xgb_model = xgb.XGBRegressor(
             max_depth=8,
             n_estimators=1000,
